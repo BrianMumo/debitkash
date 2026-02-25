@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Authentication ──────────────────────────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  hashedPassword String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  transactions Transaction[]
+
+  @@map("users")
+}
+
+// ─── M-Pesa Transactions ────────────────────────────────────────
+
+model Transaction {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Request data
+  commandId String
+  amount    Decimal @db.Decimal(12, 2)
+  partyA    String  // Shortcode (sender)
+  partyB    String  // Phone number (recipient) e.g. 254712345678
+  remarks   String?
+  occasion  String?
+
+  // Safaricom tracking IDs
+  conversationId           String? @unique
+  originatorConversationId String? @unique
+  mpesaTransactionId       String? @unique
+
+  // Status tracking
+  status     TransactionStatus @default(PENDING)
+  resultCode Int?
+  resultDesc String?
+
+  // Callback result data
+  recipientName         String?
+  isRegisteredCustomer  Boolean?
+  chargesAccountBalance Decimal? @db.Decimal(12, 2)
+  utilityAccountBalance Decimal? @db.Decimal(12, 2)
+  workingAccountBalance Decimal? @db.Decimal(12, 2)
+  completedAt           DateTime?
+
+  // Relation
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+
+  @@index([status])
+  @@index([partyB])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("transactions")
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  TIMED_OUT
+}
+
+// ─── Balance Snapshots ──────────────────────────────────────────
+
+model BalanceSnapshot {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  shortcode             String
+  utilityAccountBalance Decimal? @db.Decimal(12, 2)
+  workingAccountBalance Decimal? @db.Decimal(12, 2)
+  chargesAccountBalance Decimal? @db.Decimal(12, 2)
+
+  conversationId           String?            @unique
+  originatorConversationId String?
+  resultCode               Int?
+  resultDesc               String?
+  status                   BalanceQueryStatus @default(PENDING)
+
+  @@index([shortcode])
+  @@index([createdAt])
+  @@map("balance_snapshots")
+}
+
+enum BalanceQueryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  TIMED_OUT
+}
