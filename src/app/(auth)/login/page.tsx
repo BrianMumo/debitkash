@@ -65,7 +65,7 @@ export default function LoginPage() {
               id="email"
               label="Email"
               type="email"
-              placeholder="admin@lipanakash.co.ke"
+              placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
