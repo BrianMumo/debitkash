@@ -49,7 +49,7 @@ export default function LoginPage() {
               <Banknote className="h-7 w-7 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Welcome to LipanaKash</CardTitle>
+          <CardTitle className="text-2xl">Welcome to DebitKash</CardTitle>
           <CardDescription>
             Sign in to access your M-Pesa B2C payment dashboard
           </CardDescription>

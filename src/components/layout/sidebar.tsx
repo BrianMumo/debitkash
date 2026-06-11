@@ -29,7 +29,7 @@ export function Sidebar() {
           <Banknote className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h1 className="text-lg font-bold text-gray-900">LipanaKash</h1>
+          <h1 className="text-lg font-bold text-gray-900">DebitKash</h1>
           <p className="text-xs text-gray-500">M-Pesa B2C</p>
         </div>
       </div>

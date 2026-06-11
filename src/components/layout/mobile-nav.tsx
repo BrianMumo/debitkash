@@ -35,7 +35,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-emerald-600">
               <Banknote className="h-5 w-5 text-white" />
             </div>
-            <h1 className="text-lg font-bold text-gray-900">LipanaKash</h1>
+            <h1 className="text-lg font-bold text-gray-900">DebitKash</h1>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg">
             <X className="h-5 w-5" />

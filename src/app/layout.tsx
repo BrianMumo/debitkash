@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LipanaKash - M-Pesa B2C Dashboard",
+  title: "DebitKash - M-Pesa B2C Dashboard",
   description: "Pay customers from your Safaricom paybill with a click of a button",
 };
 
