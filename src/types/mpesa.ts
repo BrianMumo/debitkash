@@ -70,6 +70,44 @@ export interface BalanceCallbackResult {
   };
 }
 
+// ─── C2B (incoming deposits) ────────────────────────────────────
+
+// Payload Safaricom POSTs to the confirmation/validation URL.
+export interface C2BConfirmationPayload {
+  TransactionType: string;
+  TransID: string;
+  TransTime: string; // yyyyMMddHHmmss
+  TransAmount: string;
+  BusinessShortCode: string;
+  BillRefNumber: string;
+  InvoiceNumber: string;
+  OrgAccountBalance: string;
+  ThirdPartyTransID: string;
+  MSISDN: string;
+  FirstName: string;
+  MiddleName: string;
+  LastName: string;
+}
+
+export interface C2BRegisterPayload {
+  ShortCode: string;
+  ResponseType: "Completed" | "Cancelled";
+  ConfirmationURL: string;
+  ValidationURL: string;
+}
+
+export interface DepositListItem {
+  id: string;
+  createdAt: string;
+  transId: string;
+  amount: string;
+  msisdn: string | null;
+  payerName: string | null;
+  billRefNumber: string | null;
+  transactionType: string | null;
+  transTime: string | null;
+}
+
 // ─── Frontend Types ─────────────────────────────────────────────
 
 export interface PaymentFormData {

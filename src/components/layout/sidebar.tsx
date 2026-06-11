@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   SendHorizontal,
   History,
+  ArrowDownLeft,
   Settings,
   Banknote,
 } from "lucide-react";
@@ -15,6 +16,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/payments", label: "Send Payment", icon: SendHorizontal },
   { href: "/transactions", label: "Transactions", icon: History },
+  { href: "/deposits", label: "Deposits", icon: ArrowDownLeft },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

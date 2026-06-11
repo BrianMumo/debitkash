@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { BalanceCard } from "@/components/dashboard/balance-card";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
+import { RecentDeposits } from "@/components/dashboard/recent-deposits";
 import { QuickPayForm } from "@/components/dashboard/quick-pay-form";
-import type { TransactionListItem, BalanceData } from "@/types/mpesa";
+import type { TransactionListItem, DepositListItem, BalanceData } from "@/types/mpesa";
 
 export default function DashboardPage() {
   const [balance, setBalance] = useState<BalanceData>({
@@ -16,6 +17,7 @@ export default function DashboardPage() {
     status: "PENDING",
   });
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
+  const [deposits, setDeposits] = useState<DepositListItem[]>([]);
   const [stats, setStats] = useState({
     totalToday: 0,
     countToday: 0,
@@ -24,6 +26,7 @@ export default function DashboardPage() {
   });
   const [loadingBalance, setLoadingBalance] = useState(true);
   const [loadingTxns, setLoadingTxns] = useState(true);
+  const [loadingDeposits, setLoadingDeposits] = useState(true);
 
   const fetchBalance = useCallback(async () => {
     try {
@@ -85,15 +88,31 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchDeposits = useCallback(async () => {
+    try {
+      const res = await fetch("/api/deposits?limit=5");
+      if (res.ok) {
+        const data = await res.json();
+        setDeposits(data.deposits);
+      }
+    } catch (err) {
+      console.error("Failed to fetch deposits:", err);
+    } finally {
+      setLoadingDeposits(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchBalance();
     fetchTransactions();
-  }, [fetchBalance, fetchTransactions]);
+    fetchDeposits();
+  }, [fetchBalance, fetchTransactions, fetchDeposits]);
 
   function handleRefresh() {
     setLoadingBalance(true);
     fetchBalance();
     fetchTransactions();
+    fetchDeposits();
   }
 
   return (
@@ -134,6 +153,13 @@ export default function DashboardPage() {
         </div>
         <div className="lg:col-span-1">
           <QuickPayForm onPaymentSent={handleRefresh} />
+        </div>
+      </div>
+
+      {/* Recent Deposits (incoming) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <RecentDeposits deposits={deposits} loading={loadingDeposits} />
         </div>
       </div>
     </div>

@@ -100,3 +100,32 @@ enum BalanceQueryStatus {
   FAILED
   TIMED_OUT
 }
+
+// ─── C2B Deposits (incoming customer payments) ──────────────────
+
+model Deposit {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Safaricom C2B confirmation fields
+  transactionType   String? // "Pay Bill" / "Buy Goods"
+  transId           String   @unique // M-Pesa receipt no. e.g. "RKTQDM7W6S"
+  transTime         DateTime? // parsed from TransTime (yyyyMMddHHmmss)
+  amount            Decimal  @db.Decimal(12, 2)
+  shortcode         String // BusinessShortCode that received the payment
+  billRefNumber     String? // account number the customer entered
+  invoiceNumber     String?
+  orgAccountBalance Decimal? @db.Decimal(12, 2)
+  thirdPartyTransId String?
+
+  // Payer details (may be partially masked in production)
+  msisdn     String? // payer phone e.g. 2547XXXXXXXX
+  firstName  String?
+  middleName String?
+  lastName   String?
+
+  @@index([shortcode])
+  @@index([createdAt])
+  @@index([msisdn])
+  @@map("deposits")
+}
