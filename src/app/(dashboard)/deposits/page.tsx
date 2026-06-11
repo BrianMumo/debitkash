@@ -5,8 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency, formatPhone, formatDate } from "@/lib/utils";
-import { Search, ChevronLeft, ChevronRight, Download, ArrowDownLeft } from "lucide-react";
+import { formatCurrency, formatPayerPhone, formatDate } from "@/lib/utils";
+import { ChevronLeft, ChevronRight, Download, ArrowDownLeft } from "lucide-react";
 import type { DepositListItem } from "@/types/mpesa";
 
 interface Pagination {
@@ -168,7 +168,7 @@ export default function DepositsPage() {
                           {dep.payerName || "-"}
                         </td>
                         <td className="py-3 px-3 text-gray-600">
-                          {dep.msisdn ? formatPhone(dep.msisdn) : "-"}
+                          {formatPayerPhone(dep.msisdn)}
                         </td>
                         <td className="py-3 px-3 text-gray-600">{dep.billRefNumber || "-"}</td>
                         <td className="py-3 px-3 text-right font-semibold text-emerald-600">
@@ -192,7 +192,7 @@ export default function DepositsPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {dep.payerName || (dep.msisdn ? formatPhone(dep.msisdn) : "Unknown")}
+                        {dep.payerName || formatPayerPhone(dep.msisdn)}
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5">
                         {formatDate(dep.createdAt)}

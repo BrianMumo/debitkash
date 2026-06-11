@@ -22,6 +22,19 @@ export function formatPhone(phone: string): string {
   return phone;
 }
 
+export function formatPayerPhone(msisdn: string | null | undefined): string {
+  // Real Kenyan MSISDN -> pretty format.
+  if (msisdn && msisdn.startsWith("254") && msisdn.length === 12) {
+    return formatPhone(msisdn);
+  }
+  // Safaricom hashes the MSISDN (SHA-256) in production for privacy. Show a
+  // short, stable token so repeat payers are still distinguishable.
+  if (msisdn && /^[a-f0-9]{64}$/i.test(msisdn)) {
+    return `#${msisdn.slice(0, 8)}`;
+  }
+  return msisdn || "—";
+}
+
 export function normalizePhone(phone: string): string {
   // Remove spaces, dashes, and plus sign
   let cleaned = phone.replace(/[\s\-+]/g, "");

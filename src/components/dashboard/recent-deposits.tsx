@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency, formatPhone, formatRelativeTime } from "@/lib/utils";
+import { formatCurrency, formatPayerPhone, formatRelativeTime } from "@/lib/utils";
 import { ArrowRight, ArrowDownLeft } from "lucide-react";
 import type { DepositListItem } from "@/types/mpesa";
 
@@ -51,7 +51,7 @@ export function RecentDeposits({ deposits, loading }: RecentDepositsProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
-                      {dep.payerName || (dep.msisdn ? formatPhone(dep.msisdn) : "Unknown")}
+                      {dep.payerName || formatPayerPhone(dep.msisdn)}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {formatRelativeTime(dep.createdAt)}
