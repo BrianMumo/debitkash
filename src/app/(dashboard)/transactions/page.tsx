@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/toast";
 import { formatCurrency, formatPhone, formatDate } from "@/lib/utils";
-import { Search, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Download, RotateCcw } from "lucide-react";
 import type { TransactionListItem } from "@/types/mpesa";
 import type { BadgeVariant } from "@/components/ui/badge";
 
@@ -19,6 +21,23 @@ const statusVariant: Record<string, BadgeVariant> = {
   FAILED: "error",
   TIMED_OUT: "error",
 };
+
+const reversalLabel: Record<string, { label: string; variant: BadgeVariant }> = {
+  PENDING: { label: "Reversing…", variant: "warning" },
+  SUCCESS: { label: "Reversed", variant: "default" },
+  FAILED: { label: "Reversal failed", variant: "error" },
+  TIMED_OUT: { label: "Reversal timed out", variant: "error" },
+};
+
+function canReverse(txn: TransactionListItem): boolean {
+  return (
+    txn.status === "SUCCESS" &&
+    !!txn.mpesaTransactionId &&
+    (txn.reversalStatus === "NONE" ||
+      txn.reversalStatus === "FAILED" ||
+      txn.reversalStatus === "TIMED_OUT")
+  );
+}
 
 const statusOptions = [
   { value: "ALL", label: "All Statuses" },
@@ -45,6 +64,9 @@ export default function TransactionsPage() {
   const [status, setStatus] = useState("ALL");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [reverseTarget, setReverseTarget] = useState<TransactionListItem | null>(null);
+  const [reversing, setReversing] = useState(false);
+  const { toast } = useToast();
 
   const fetchTransactions = useCallback(async (page = 1) => {
     setLoading(true);
@@ -75,6 +97,27 @@ export default function TransactionsPage() {
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     fetchTransactions(1);
+  }
+
+  async function handleReverse() {
+    if (!reverseTarget) return;
+    setReversing(true);
+    try {
+      const res = await fetch("/api/mpesa/reversal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transactionId: reverseTarget.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Reversal failed");
+      toast(data.message || "Reversal initiated", "success");
+      setReverseTarget(null);
+      fetchTransactions(pagination.page);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Reversal failed", "error");
+    } finally {
+      setReversing(false);
+    }
   }
 
   return (
@@ -179,6 +222,7 @@ export default function TransactionsPage() {
                       <th className="text-right py-3 px-3 text-gray-500 font-medium">Amount</th>
                       <th className="text-center py-3 px-3 text-gray-500 font-medium">Status</th>
                       <th className="text-left py-3 px-3 text-gray-500 font-medium">Receipt</th>
+                      <th className="text-right py-3 px-3 text-gray-500 font-medium">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -198,6 +242,24 @@ export default function TransactionsPage() {
                         <td className="py-3 px-3 text-gray-500 font-mono text-xs">
                           {txn.mpesaTransactionId || "-"}
                         </td>
+                        <td className="py-3 px-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {txn.reversalStatus !== "NONE" && reversalLabel[txn.reversalStatus] && (
+                              <Badge variant={reversalLabel[txn.reversalStatus].variant}>
+                                {reversalLabel[txn.reversalStatus].label}
+                              </Badge>
+                            )}
+                            {canReverse(txn) && (
+                              <Button variant="outline" size="sm" onClick={() => setReverseTarget(txn)}>
+                                <RotateCcw className="h-3.5 w-3.5" />
+                                {txn.reversalStatus === "NONE" ? "Reverse" : "Retry"}
+                              </Button>
+                            )}
+                            {txn.reversalStatus === "NONE" && !canReverse(txn) && (
+                              <span className="text-gray-300">—</span>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -207,24 +269,43 @@ export default function TransactionsPage() {
               {/* Mobile list */}
               <div className="md:hidden space-y-2">
                 {transactions.map((txn) => (
-                  <Link
-                    key={txn.id}
-                    href={`/payments/${txn.id}`}
-                    className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {txn.recipientName || formatPhone(txn.partyB)}
-                        </p>
-                        <Badge variant={statusVariant[txn.status] || "default"}>
-                          {txn.status}
-                        </Badge>
+                  <div key={txn.id} className="rounded-lg border border-gray-100">
+                    <Link
+                      href={`/payments/${txn.id}`}
+                      className="flex items-center justify-between p-3 hover:bg-gray-50"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {txn.recipientName || formatPhone(txn.partyB)}
+                          </p>
+                          <Badge variant={statusVariant[txn.status] || "default"}>
+                            {txn.status}
+                          </Badge>
+                          {txn.reversalStatus !== "NONE" && reversalLabel[txn.reversalStatus] && (
+                            <Badge variant={reversalLabel[txn.reversalStatus].variant}>
+                              {reversalLabel[txn.reversalStatus].label}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">{formatDate(txn.createdAt)}</p>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">{formatDate(txn.createdAt)}</p>
-                    </div>
-                    <p className="text-sm font-semibold ml-4">{formatCurrency(txn.amount)}</p>
-                  </Link>
+                      <p className="text-sm font-semibold ml-4">{formatCurrency(txn.amount)}</p>
+                    </Link>
+                    {canReverse(txn) && (
+                      <div className="px-3 pb-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => setReverseTarget(txn)}
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                          {txn.reversalStatus === "NONE" ? "Reverse" : "Retry reversal"}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
 
@@ -258,6 +339,63 @@ export default function TransactionsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Reverse confirmation */}
+      <Dialog
+        open={!!reverseTarget}
+        onClose={() => {
+          if (!reversing) setReverseTarget(null);
+        }}
+      >
+        <DialogTitle>Reverse Payment</DialogTitle>
+        <DialogDescription>
+          This reverses the M-Pesa payment and pulls the funds back to your
+          paybill. This cannot be undone.
+        </DialogDescription>
+        {reverseTarget && (
+          <div className="mt-4 space-y-3 p-4 bg-gray-50 rounded-lg">
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-500">Recipient</span>
+              <span className="text-sm font-medium">
+                {reverseTarget.recipientName || formatPhone(reverseTarget.partyB)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-500">Phone</span>
+              <span className="text-sm font-medium">{formatPhone(reverseTarget.partyB)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-500">Amount</span>
+              <span className="text-sm font-bold text-red-600">
+                {formatCurrency(reverseTarget.amount)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-500">Receipt</span>
+              <span className="text-sm font-mono">{reverseTarget.mpesaTransactionId}</span>
+            </div>
+          </div>
+        )}
+        <div className="flex gap-3 mt-6">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => setReverseTarget(null)}
+            disabled={reversing}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            className="flex-1"
+            onClick={handleReverse}
+            loading={reversing}
+          >
+            <RotateCcw className="h-4 w-4" />
+            Reverse Payment
+          </Button>
+        </div>
+      </Dialog>
     </div>
   );
 }

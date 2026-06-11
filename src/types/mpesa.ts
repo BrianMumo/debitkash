@@ -70,6 +70,45 @@ export interface BalanceCallbackResult {
   };
 }
 
+// ─── Transaction Reversal ───────────────────────────────────────
+
+export interface ReversalRequestPayload {
+  Initiator: string;
+  SecurityCredential: string;
+  CommandID: "TransactionReversal";
+  TransactionID: string; // the original M-Pesa receipt to reverse
+  Amount: number;
+  ReceiverParty: string; // shortcode that receives the reversed funds
+  RecieverIdentifierType: "11"; // 11 = organization shortcode (spelling per Safaricom spec)
+  ResultURL: string;
+  QueueTimeOutURL: string;
+  Remarks: string;
+  Occasion: string;
+}
+
+export interface ReversalApiResponse {
+  ConversationID: string;
+  OriginatorConversationID: string;
+  ResponseCode: string;
+  ResponseDescription: string;
+}
+
+export interface ReversalCallbackResult {
+  Result: {
+    ResultType: number;
+    ResultCode: number;
+    ResultDesc: string;
+    OriginatorConversationID: string;
+    ConversationID: string;
+    TransactionID: string;
+    ResultParameters?: {
+      ResultParameter: Array<{ Key: string; Value: string | number }>;
+    };
+  };
+}
+
+export type ReversalStatus = "NONE" | "PENDING" | "SUCCESS" | "FAILED" | "TIMED_OUT";
+
 // ─── C2B (incoming deposits) ────────────────────────────────────
 
 // Payload Safaricom POSTs to the confirmation/validation URL.
@@ -136,6 +175,7 @@ export interface TransactionListItem {
   remarks: string | null;
   mpesaTransactionId: string | null;
   recipientName: string | null;
+  reversalStatus: ReversalStatus;
 }
 
 export interface TransactionFilters {

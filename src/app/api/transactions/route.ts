@@ -56,6 +56,7 @@ export async function GET(request: Request) {
           remarks: true,
           mpesaTransactionId: true,
           recipientName: true,
+          reversalStatus: true,
         },
       }),
       prisma.transaction.count({ where }),
